@@ -7,17 +7,20 @@ A Python-based fingerprint recognition system demonstrating linear algebra conce
 This project implements a fingerprint matching system using:
 
 - **Principal Component Analysis (PCA)** for dimensionality reduction
-- **Euclidean Distance** for similarity measurement
-- **Vector operations** for feature extraction
-- Real fingerprint dataset (SOCOFing - Sokoto Coventry Fingerprint Dataset subset)
+- **Multi-scale feature extraction** (global, gradient, and local features)
+- **Multiple distance metrics** (L2, L1, Cosine similarity, Correlation)
+- **Gradient-based features** using Sobel operators
+- Real fingerprint dataset (FVC2002 Database subset)
 
 ## Linear Algebra Concepts Applied
 
-1. **Matrix Operations**: Fingerprint images are represented as matrices
-2. **Eigenvectors & Eigenvalues**: PCA uses these for dimensionality reduction
-3. **Vector Norms**: Euclidean distance for comparing fingerprints
-4. **Matrix Decomposition**: Covariance matrix analysis
-5. **Dot Products**: For projection onto principal components
+1. **Matrix Operations**: Fingerprint images represented as matrices
+2. **Eigenvectors & Eigenvalues**: PCA for dimensionality reduction
+3. **Vector Norms**: L1 and L2 distance metrics
+4. **Matrix Decomposition**: Covariance matrix eigendecomposition
+5. **Dot Products**: Projection onto principal components
+6. **Convolution**: Sobel operators for gradient extraction
+7. **Multiple Subspaces**: Separate PCA models for different feature types
 
 ## Prerequisites
 
@@ -39,40 +42,25 @@ This project implements a fingerprint matching system using:
 
 ## Dataset
 
-The project includes realistic fingerprint samples with proper labeling:
+This project uses real fingerprint images from the FVC2002 (Fingerprint Verification Competition) database.
 
 ### Dataset Structure:
 
-- **Database** (`dataset/db/`): 10 fingerprint images from 5 subjects
-  - Naming: `SubjectID_FingerType_SampleNumber.png`
-  - Example: `Subject001_RightThumb_01.png`
-- **Query** (`dataset/query/`): 3 test fingerprints
-  - Naming: `Query_SubjectID_FingerType.png`
-  - Example: `Query_Subject001_RightThumb.png`
+- **Database** (`dataset/db/`): 32 fingerprint images from 4 subjects
+  - Naming: `PersonID_ScanNumber.tif`
+  - Example: `101_1.tif`, `101_2.tif`, etc.
+  - 8 scans per person (different impressions of the same finger)
+- **Query** (`dataset/query/`): Test fingerprints for matching
+  - Contains sample scans from the database subjects
 
-### Subjects:
+### Subjects in Database:
 
-- **Subject001**: Right Thumb, Right Index
-- **Subject002**: Right Thumb, Left Index
-- **Subject003**: Right Thumb, Right Middle
-- **Subject004**: Left Thumb, Left Index
-- **Subject005**: Right Thumb, Right Ring
+- Person 101: 8 scans
+- Person 102: 8 scans
+- Person 103: 8 scans
+- Person 104: 8 scans
 
-### Regenerate Dataset:
-
-To create fresh realistic fingerprint samples:
-
-```bash
-python setup_real_dataset.py
-```
-
-### Use Your Own Fingerprints:
-
-To use real fingerprint scans or public datasets:
-
-1. Download fingerprint images (e.g., from SOCOFing, FVC2000, or NIST databases)
-2. Place images in `dataset/db/` and `dataset/query/`
-3. Use consistent naming for tracking matches
+The system correctly matches all 8 scans from the same person when given a query fingerprint.
 
 ## Running the Application
 
@@ -96,99 +84,105 @@ run.bat
 
 ## How It Works
 
-1. **Load Dataset**: Fingerprint images are loaded from the dataset folder
-2. **Preprocessing**: Images are converted to grayscale and resized
-3. **Feature Extraction**:
-   - Images are flattened into vectors
-   - PCA reduces dimensionality (Linear Algebra!)
-4. **Matching**:
-   - Select a query fingerprint
-   - System calculates Euclidean distance to all database fingerprints
-   - Returns closest matches
-5. **Visualization**: Simple Tkinter GUI displays results
+1. **Load Dataset**: Fingerprint images loaded from dataset folder
+2. **Preprocessing**:
+   - CLAHE (Contrast Limited Adaptive Histogram Equalization)
+   - Bilateral filtering for edge preservation
+3. **Multi-Scale Feature Extraction**:
+   - Global features: Flattened image matrix
+   - Gradient features: Sobel operators for edge detection
+   - Local features: Histogram of oriented gradients in cells
+4. **PCA Training**:
+   - Three separate PCA models trained on different feature types
+   - Reduces 65,536 + 65,536 + 1,800 dimensions to 32 + 30 + 32 = 94 dimensions
+5. **Matching**:
+   - Combines 4 similarity metrics (L2, L1, Cosine, Correlation)
+   - Returns all scans from the same person, sorted by similarity
+6. **Visualization**: Tkinter GUI with scrollable results
 
 ## Project Structure
 
 ```
 fingerprint-recognition/
 ├── src/
-│   ├── main.py                    # Main application entry point
-│   ├── fingerprint_processor.py   # Core processing with linear algebra
-│   ├── gui.py                     # Simple Tkinter frontend
-│   └── utils.py                   # Utility functions
+│   ├── main.py                  # Application entry point
+│   ├── enhanced_processor.py    # Multi-scale PCA with gradient features
+│   ├── gui.py                   # Tkinter interface
+│   └── utils.py                 # Helper functions
 ├── dataset/
-│   ├── db/                        # Database fingerprints
-│   └── query/                     # Query fingerprints for testing
-├── requirements.txt               # Python dependencies
-├── run.ps1                        # PowerShell run script
-├── run.bat                        # Batch run script
-└── README.md                      # This file
+│   ├── db/                      # 32 fingerprint images (4 subjects, 8 scans each)
+│   └── query/                   # Query fingerprints for testing
+├── requirements.txt             # Dependencies
+├── run.ps1                      # PowerShell launcher
+├── run.bat                      # Batch launcher
+└── README.md                    # Documentation
 ```
 
 ## Usage Guide
 
-1. **Launch the application** using one of the methods above
-2. **Select a query fingerprint** from the dropdown menu
-3. **Click "Match Fingerprint"** to find similar prints
-4. **View results**: Top 3 matches with similarity scores
-5. **Experiment**: Try different query images to see matching results
+1. Launch the application using one of the methods above
+2. Select a query fingerprint from the dropdown menu
+3. Click "Match Fingerprint" to find similar prints
+4. View results: All matching scans from the same person with similarity scores
+5. Try different query images to see how the system identifies all impressions from the same finger
 
-## Linear Algebra Annotations
+## Linear Algebra Implementation
 
-The code is heavily annotated, especially in `fingerprint_processor.py`, where linear algebra concepts are applied:
+The code includes detailed annotations in `enhanced_processor.py` explaining:
 
-- **Matrix representation** of images
-- **Covariance matrix** computation
-- **Eigendecomposition** for PCA
-- **Vector projections** onto principal components
-- **Norm calculations** for distance metrics
+- Matrix representation of fingerprint images
+- Covariance matrix computation
+- Eigendecomposition for multiple PCA models
+- Gradient vectors using Sobel operators (convolution matrices)
+- Vector projections onto principal component subspaces
+- Multiple norm calculations (L1, L2, dot products)
 
 ## Technical Details
 
-- **Image Size**: 96x96 pixels (converted to grayscale)
-- **Feature Vector**: Original 9,216 dimensions
-- **PCA Components**: Reduced to 50 dimensions (configurable)
-- **Distance Metric**: Euclidean distance (L2 norm)
+- **Image Size**: 256x256 pixels (grayscale)
+- **Feature Dimensions**:
+  - Global: 65,536 → 32 via PCA
+  - Gradient: 65,536 → 30 via PCA
+  - Local: 1,800 → 32 via PCA
+  - Combined: 94 dimensions
+- **Distance Metrics**: Weighted combination of L2, L1, Cosine similarity, and Correlation
+- **Dataset**: FVC2002 real fingerprint images
 
 ## Limitations
 
-- This is an educational project demonstrating concepts
-- Real-world fingerprint systems use more sophisticated algorithms (minutiae extraction, ridge patterns)
-- Small dataset for demonstration purposes
-- No authentication or security features
+- Educational project demonstrating linear algebra concepts
+- Real-world systems may use minutiae extraction and ridge pattern analysis
+- Limited dataset (32 images from 4 subjects)
+- No security or authentication features included
 
 ## Future Enhancements
 
-- Add minutiae-based matching
-- Implement more distance metrics (cosine similarity, Manhattan distance)
-- Expand dataset
-- Add fingerprint quality assessment
-- Real-time camera capture
+- Add minutiae detection algorithms
+- Expand dataset with more subjects
+- Implement fingerprint quality assessment
+- Add real-time capture capability
 
 ## References
 
-- SOCOFing Dataset: Sokoto Coventry Fingerprint Dataset
+- FVC2002: Fingerprint Verification Competition 2002 Database
 - Principal Component Analysis (PCA)
-- Eigenface technique adapted for fingerprints
+- Sobel operators for edge detection
+- Multi-scale feature extraction techniques
 
 ## License
 
-Educational use only. Dataset images are from public domain sources.
+Educational use only. FVC2002 dataset used for academic purposes.
 
 ## Troubleshooting
 
-**Issue**: Module not found errors
+**Module not found errors**
 
-- **Solution**: Run `pip install -r requirements.txt`
+- Run `pip install -r requirements.txt`
 
-**Issue**: No fingerprints found
+**No fingerprints found**
 
-- **Solution**: Ensure dataset folder contains images
+- Ensure dataset/db/ and dataset/query/ folders contain .tif images
 
-**Issue**: GUI doesn't appear
+**GUI doesn't appear**
 
-- **Solution**: Check Tkinter is installed (usually comes with Python)
-
-## Contact
-
-For questions or issues, please refer to the code annotations or create an issue in the repository.
+- Tkinter is usually included with Python, reinstall Python if needed
