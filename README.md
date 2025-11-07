@@ -32,7 +32,7 @@ This project implements a fingerprint matching system using:
 1. **Clone or navigate to the project directory**:
 
    ```bash
-   cd fingerprint-recognition
+   cd fingerprint-recognition-scanner
    ```
 
 2. **Install required packages**:
@@ -103,7 +103,7 @@ run.bat
 ## Project Structure
 
 ```
-fingerprint-recognition/
+fingerprint-recognition-scanner/
 ├── src/
 │   ├── main.py                  # Application entry point
 │   ├── enhanced_processor.py    # Multi-scale PCA with gradient features
@@ -186,3 +186,4 @@ Educational use only. FVC2002 dataset used for academic purposes.
 **GUI doesn't appear**
 
 - Tkinter is usually included with Python, reinstall Python if needed
+
